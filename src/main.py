@@ -18,7 +18,7 @@ def main() -> None:
     #
     # date = get_date_for_greeting()
     # print(date)
-    date ='02.12.2021 16:44:00'
+    date ='21.12.2021 16:44:00'
     data = json_home_page(date)
     print(data)
     return None

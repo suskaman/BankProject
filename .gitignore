@@ -1,4 +1,5 @@
-configurate/logging_config.py
+logging_config.py
+
 scr_git.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
