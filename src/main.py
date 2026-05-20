@@ -13,14 +13,14 @@ def main() -> None:
     """The program's main function. Responsible for initializing the application,
     parsing command-line arguments,and starting the program's main loop."""
 
-    # data = get_data_from_excel("data/operations.xlsx")
+    # print(get_data_from_excel("../data/operations.xlsx"))
     # print(data)
     #
     # date = get_date_for_greeting()
     # print(date)
-    date ='31.12.2021 16:44:00'
+    date ='02.12.2021 16:44:00'
     data = json_home_page(date)
-    pprint.pprint(data, indent=4)
+    print(data)
     return None
 
 
