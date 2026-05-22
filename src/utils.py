@@ -1,11 +1,13 @@
 import json
 import logging
+
 import pandas as pd
 
 from configurate.logging_config import setup_logging
 
 # create logger
 util_logger = logging.getLogger("utils")
+
 
 def get_data_from_excel(path_to_xlsx: str) -> list[dict]:
     """get data from the xlsx file and return it as a list of dict"""
@@ -28,7 +30,6 @@ def get_data_from_excel(path_to_xlsx: str) -> list[dict]:
         util_logger.info("FINISH getting data from excel")
 
 
-
 def get_data_from_json(path_to_json: str) -> list[dict]:
     """return a list of all transactions"""
     util_logger.info("START getting transactions")
@@ -43,7 +44,9 @@ def get_data_from_json(path_to_json: str) -> list[dict]:
             return data
 
     except FileNotFoundError:
-        util_logger.error("transactions are not found, please check the path", exc_info=True)
+        util_logger.error(
+            "transactions are not found, please check the path", exc_info=True
+        )
         return [{}]
 
     except json.decoder.JSONDecodeError:
@@ -51,12 +54,13 @@ def get_data_from_json(path_to_json: str) -> list[dict]:
         return [{}]
 
     except ValueError:
-        util_logger.error("json file must contain a list of transactions", exc_info=True)
+        util_logger.error(
+            "json file must contain a list of transactions", exc_info=True
+        )
         return [{}]
 
     finally:
         util_logger.info("END getting transactions")
-
 
 
 if __name__ == "__main__":
