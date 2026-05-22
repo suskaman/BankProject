@@ -10,6 +10,7 @@ from src.services import get_categories_with_profitable_cashback
 # create logger
 main_logger = logging.getLogger("main")
 
+
 def main() -> None:
     """The program's main function. Responsible for initializing the application,
     parsing command-line arguments,and starting the program's main loop."""
