@@ -27,8 +27,8 @@ def get_date_for_greeting() -> str:
     views_logger.info("START getting date for greeting")
     try:
         date = datetime.datetime.now()
-        time = str(date.time())
-        hour = int(time.split(":")[0])
+        time_now = str(date.time())
+        hour = int(time_now.split(":")[0])
 
         if 6 <= hour < 12:
             greeting = "Доброе утро"
@@ -40,6 +40,7 @@ def get_date_for_greeting() -> str:
             greeting = "Доброй ночи"
 
         return greeting
+
     finally:
         views_logger.info("END getting date for greeting")
 
@@ -112,11 +113,13 @@ def get_exchange_rate(
     currency_rates = {"currency_rates": []}
 
     try:
+        currency_rates: dict = {"currency_rates": []}
         for currency in currencies:
             url = f"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={currency}&to_currency=RUB&apikey={api_alpha}"
             response = requests.get(url)
             data = response.json()
             status = response.status_code
+
             if 200 <= status <= 300:
                 rate = round(
                     float(data["Realtime Currency Exchange Rate"]["5. Exchange Rate"]),
@@ -129,6 +132,15 @@ def get_exchange_rate(
                     }
                 )
                 time.sleep(1)
+
+        return currency_rates
+
+    except TypeError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
+    except ValueError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
 
     finally:
         views_logger.info("END getting exchange rate")
@@ -184,10 +196,10 @@ def json_home_page(date=""):
     home.update(get_top_five_transactions(data_by_date))
 
     # 4 currency rate
-    # home.update(get_exchange_rate(setup['user_currencies']))
+    home.update(get_exchange_rate(setup["user_currencies"]))
 
     # 5 stoke prices
-    # home.update(get_stoke_prices(setup['user_stocks']))
+    home.update(get_stoke_prices(setup["user_stocks"]))
 
     json_home = json.dumps(home, ensure_ascii=False, indent=4)
 
