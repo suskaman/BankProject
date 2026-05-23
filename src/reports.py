@@ -4,6 +4,8 @@ from typing import Callable, Optional
 
 import pandas as pd
 
+from configurate.logging_config import setup_logging
+
 report_logger = logging.getLogger("report")
 
 
@@ -44,7 +46,7 @@ def spending_by_category(
         if date is None:
             end_date = pd.Timestamp.today()
         else:
-            end_date = pd.to_datetime(date)
+            end_date = pd.to_datetime(date, dayfirst=True)
 
         start_date = end_date - pd.DateOffset(months=3)
         transactions["Дата операции"] = pd.to_datetime(
@@ -64,3 +66,7 @@ def spending_by_category(
 
     finally:
         report_logger.info("END getting spending by category")
+
+
+if __name__ == "__main__":
+    setup_logging()

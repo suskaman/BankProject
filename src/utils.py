@@ -30,7 +30,7 @@ def get_data_from_excel(path_to_xlsx: str) -> list[dict]:
         util_logger.info("FINISH getting data from excel")
 
 
-def get_data_from_json(path_to_json: str) -> list[dict]:
+def get_data_from_json(path_to_json: str) -> dict:
     """return a list of all transactions"""
     util_logger.info("START getting transactions")
 
@@ -47,17 +47,17 @@ def get_data_from_json(path_to_json: str) -> list[dict]:
         util_logger.error(
             "transactions are not found, please check the path", exc_info=True
         )
-        return [{}]
+        return {}
 
     except json.decoder.JSONDecodeError:
         util_logger.error("invalid json file", exc_info=True)
-        return [{}]
+        return {}
 
     except ValueError:
         util_logger.error(
             "json file must contain a list of transactions", exc_info=True
         )
-        return [{}]
+        return {}
 
     finally:
         util_logger.info("END getting transactions")
