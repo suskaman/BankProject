@@ -1,7 +1,9 @@
 import logging
 
+import pandas as pd
+
 from configurate.logging_config import setup_logging
-from services import investment_bank
+from reports import spending_by_category
 from utils import get_data_from_excel
 
 # create logger
@@ -15,8 +17,9 @@ def main() -> None:
     # date ='21.12.2021 16:44:00'
     # data = json_home_page(date)
     data = get_data_from_excel("../data/operations.xlsx")
-    # print(get_categories_with_profitable_cashback(data, '2021', '02'))
-    print(investment_bank("2021-02", data, 10))
+    df = pd.DataFrame(data)
+
+    print(spending_by_category(df, "Супермаркеты", "2021-12-21 10:00:00"))
 
     return None
 
