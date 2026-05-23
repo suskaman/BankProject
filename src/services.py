@@ -1,10 +1,10 @@
+import collections as col
 import json
 import logging
-import collections as col
 import math
 
+services_logger = logging.getLogger("services_logger")
 
-services_logger = logging.getLogger('services_logger')
 
 def get_categories_with_profitable_cashback(data: list[dict], year: str, month: str):
     """getting profitable cashback categories list"""
