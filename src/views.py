@@ -115,7 +115,10 @@ def get_exchange_rate(
     try:
         currency_rates: dict = {"currency_rates": []}
         for currency in currencies:
-            url = f"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={currency}&to_currency=RUB&apikey={api_alpha}"
+            url = (
+                f"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&"
+                f"from_currency={currency}&to_currency=RUB&apikey={api_alpha}"
+            )
             response = requests.get(url)
             data = response.json()
             status = response.status_code
@@ -158,34 +161,62 @@ def get_stoke_prices(stocks: list) -> dict:
     return stock_prices
 
 
-def get_days_by_date(operations: list[dict], date: str) -> list[dict]:
-    date = date.split(" ")[0]
-    month = date.split(".")[1]
-    day = date.split(".")[0]
-    year = date.split(".")[2]
-    year_operations = [
-        operation
-        for operation in operations
-        if operation.get("Дата операции", "").split(" ")[0].split(".")[2] == year
-    ]
-    month_operations = [
-        operation
-        for operation in year_operations
-        if operation.get("Дата операции", "").split(" ")[0].split(".")[1] == month
-    ]
-    days_operations = [
-        operation
-        for operation in month_operations
-        if int(operation.get("Дата операции", "").split(" ")[0].split(".")[0])
-        <= int(day)
-    ]
-    return days_operations
+def get_operations_by_date(operations: list[dict], date: str) -> list[dict]:
+    """filter list of operations by date. from a first day of month to a day by date"""
+    views_logger.info("START getting operations by date")
+    try:
+        if not operations:
+            raise ValueError("operations cannot be empty")
+        if not isinstance(operations, list):
+            raise TypeError("operations must be a list")
+        if not isinstance(date, str):
+            raise TypeError("date must be a string")
+        if date == "":
+            raise ValueError("date cannot be empty")
+
+        date = date.split(" ")[0]
+        month = date.split(".")[1]
+        day = date.split(".")[0]
+        year = date.split(".")[2]
+
+        year_operations = [
+            operation
+            for operation in operations
+            if operation.get("Дата операции", "").split(" ")[0].split(".")[2] == year
+        ]
+        month_operations = [
+            operation
+            for operation in year_operations
+            if operation.get("Дата операции", "").split(" ")[0].split(".")[1] == month
+        ]
+        days_operations = [
+            operation
+            for operation in month_operations
+            if int(operation.get("Дата операции", "").split(" ")[0].split(".")[0])
+            <= int(day)
+        ]
+
+        return days_operations
+
+    except TypeError as e:
+        views_logger.error(f"ERROR: {e}")
+        return [{}]
+    except ValueError as e:
+        views_logger.error(f"ERROR: {e}")
+        return [{}]
+
+    finally:
+        views_logger.info("END getting operations by date")
 
 
-def json_home_page(date=""):
+def json_home_page(date: str):
+    """main function which get returns from functions and return json"""
+    if not isinstance(date, str) or date == "":
+        date = str(datetime.datetime.now())
+
     setup = get_data_from_json("../user_settings.json")
     data = get_data_from_excel("../data/operations.xlsx")
-    data_by_date = get_days_by_date(data, date)
+    data_by_date = get_operations_by_date(data, date)
 
     # 1 greeting
     home = {"greeting": get_date_for_greeting()}
