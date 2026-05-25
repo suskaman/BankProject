@@ -4,11 +4,13 @@ import json
 import logging
 import os
 import time
+from typing import Any
 
-import finnhub
+import finnhub  # type: ignore
 import requests
 from dotenv import load_dotenv
 
+from configurate.logging_config import setup_logging
 from src.utils import get_data_from_excel, get_data_from_json
 
 load_dotenv()
@@ -47,24 +49,41 @@ def get_date_for_greeting() -> str:
 
 def get_info_about_all_cards(operations: list[dict]) -> dict:
     """get the latest 4 digits of card, total expenses, cashback(1 for every 100)"""
-    cards = {"cards": []}
-    list_of_cards = [operation.get("Номер карты", "") for operation in operations]
-    count = dict(col.Counter(list_of_cards))
-    for key in count.keys():
-        if isinstance(key, str):
-            var = sum(
-                operation.get("Сумма операции с округлением", 0)
-                for operation in operations
-                if operation.get(f"Номер карты") == key
-            )
-            cards["cards"].append(
-                {
-                    "last_digits": key[1:],
-                    "total": round(var, 2),
-                    "cashback": round(var / 100, 2),
-                }
-            )
-    return cards
+    views_logger.info("START getting info about all cards")
+    try:
+        if operations is None:
+            raise ValueError("operations can not be None")
+        if not isinstance(operations, list):
+            raise TypeError("operations must be a list")
+
+        cards: dict[str, Any] = {"cards": []}
+        list_of_cards = [operation.get("Номер карты", "") for operation in operations]
+        count = dict(col.Counter(list_of_cards))
+        for key in count.keys():
+            if isinstance(key, str):
+                var = sum(
+                    operation.get("Сумма операции с округлением", 0)
+                    for operation in operations
+                    if operation.get("Номер карты") == key
+                )
+                cards["cards"].append(
+                    {
+                        "last_digits": key[1:],
+                        "total": round(var, 2),
+                        "cashback": round(var / 100, 2),
+                    }
+                )
+        return cards
+
+    except TypeError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
+    except ValueError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
+
+    finally:
+        views_logger.info("END getting info about all cards")
 
 
 def get_top_five_transactions(operations: list[dict]) -> dict:
@@ -73,8 +92,10 @@ def get_top_five_transactions(operations: list[dict]) -> dict:
     try:
         if not isinstance(operations, list):
             raise TypeError("operations must be a list")
+        if operations is None:
+            raise ValueError("operations can not be None")
 
-        top_transactions = {"top_transactions": []}
+        top_transactions: dict[str, Any] = {"top_transactions": []}
         # filter data by date
 
         sorted_by_amount = sorted(
@@ -97,6 +118,9 @@ def get_top_five_transactions(operations: list[dict]) -> dict:
     except TypeError as e:
         views_logger.error(f"ERROR: {e}")
         return {}
+    except ValueError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
 
     finally:
         views_logger.info("END getting top five transactions")
@@ -104,15 +128,17 @@ def get_top_five_transactions(operations: list[dict]) -> dict:
     return top_transactions
 
 
-def get_exchange_rate(
-    currencies: list,
-) -> dict:
+def get_exchange_rate(currencies: list) -> dict:
     """get exchange rate.
     USD and EUR"""
     views_logger.info("START getting exchange rate")
-    currency_rates = {"currency_rates": []}
 
     try:
+        if not isinstance(currencies, list):
+            raise TypeError("currencies must be a list")
+        if currencies is None:
+            raise ValueError("currencies can not be None")
+
         currency_rates: dict = {"currency_rates": []}
         for currency in currencies:
             url = (
@@ -121,20 +147,19 @@ def get_exchange_rate(
             )
             response = requests.get(url)
             data = response.json()
-            status = response.status_code
+            response.raise_for_status()
 
-            if 200 <= status <= 300:
-                rate = round(
-                    float(data["Realtime Currency Exchange Rate"]["5. Exchange Rate"]),
-                    2,
-                )
-                currency_rates["currency_rates"].append(
-                    {
-                        "currency": currency,
-                        "rate": rate,
-                    }
-                )
-                time.sleep(1)
+            rate = round(
+                float(data["Realtime Currency Exchange Rate"]["5. Exchange Rate"]),
+                2,
+            )
+            currency_rates["currency_rates"].append(
+                {
+                    "currency": currency,
+                    "rate": rate,
+                }
+            )
+            time.sleep(1)
 
         return currency_rates
 
@@ -144,21 +169,46 @@ def get_exchange_rate(
     except ValueError as e:
         views_logger.error(f"ERROR: {e}")
         return {}
+    except requests.exceptions.HTTPError as http_err:
+        views_logger.error(f"HTTP ошибка: {http_err}")
+        return {}
+    except requests.exceptions.ConnectionError:
+        views_logger.error("Ошибка сети: проверьте подключение к интернету.")
+        return {}
+    except requests.exceptions.Timeout:
+        views_logger.error("Таймаут: сервер не ответил вовремя.")
+        return {}
 
     finally:
         views_logger.info("END getting exchange rate")
-    return currency_rates
 
 
 def get_stoke_prices(stocks: list) -> dict:
     """get shares price by SPX."""
-    finnhub_client = finnhub.Client(api_key=api_fin)
-    stock_prices = {"stock_prices": []}
-    for stock in stocks:
-        price = finnhub_client.quote(stock).get("c")
-        stock_prices["stock_prices"].append({"stock": stock, "price": price})
+    views_logger.info("START getting stokes prices")
+    try:
+        if stocks is None:
+            raise ValueError("stocks cannot be None")
+        if not isinstance(stocks, list):
+            raise TypeError("stocks must be a list")
 
-    return stock_prices
+        finnhub_client = finnhub.Client(api_key=api_fin)
+        stock_prices: dict[str, Any] = {"stock_prices": []}
+        for stock in stocks:
+            price = finnhub_client.quote(stock).get("c")
+            stock_prices["stock_prices"].append({"stock": stock, "price": price})
+
+        return stock_prices
+
+    except TypeError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
+    except ValueError as e:
+        views_logger.error(f"ERROR: {e}")
+        return {}
+
+    finally:
+        views_logger.info("END getting stokes prices")
 
 
 def get_operations_by_date(operations: list[dict], date: str) -> list[dict]:
@@ -210,7 +260,7 @@ def get_operations_by_date(operations: list[dict], date: str) -> list[dict]:
 
 
 def json_home_page(date: str):
-    """main function which get returns from functions and return json"""
+    """main function which get returns from functions and return json-data"""
     if not isinstance(date, str) or date == "":
         date = str(datetime.datetime.now())
 
@@ -235,3 +285,7 @@ def json_home_page(date: str):
     json_home = json.dumps(home, ensure_ascii=False, indent=4)
 
     return json_home
+
+
+if __name__ == "__main__":
+    setup_logging()

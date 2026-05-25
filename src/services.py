@@ -3,6 +3,8 @@ import json
 import logging
 import math
 
+from configurate.logging_config import setup_logging
+
 services_logger = logging.getLogger("services_logger")
 
 
@@ -10,11 +12,11 @@ def get_categories_with_profitable_cashback(data: list[dict], year: str, month: 
     """getting profitable cashback categories list"""
     services_logger.info("START getting profitable cashback categories list")
     try:
-        if isinstance(data, list):
+        if not isinstance(data, list):
             raise TypeError("data must be a list")
-        if isinstance(year, str):
+        if not isinstance(year, str):
             raise TypeError("year must be a string")
-        if isinstance(month, str):
+        if not isinstance(month, str):
             raise TypeError("month must be a string")
         if data is None:
             raise ValueError("data cannot be None")
@@ -24,20 +26,32 @@ def get_categories_with_profitable_cashback(data: list[dict], year: str, month: 
             raise ValueError("month cannot be None")
 
         profitable_categories = {}
-        year_operations = [operation for operation in data if
-                           operation.get('Дата операции', '').split(" ")[0].split('.')[2] == year]
-        month_operations = [operation for operation in year_operations if
-                            operation.get('Дата операции', '').split(" ")[0].split('.')[1] == month]
+        year_operations = [
+            operation
+            for operation in data
+            if operation.get("Дата операции", "").split(" ")[0].split(".")[2] == year
+        ]
+        month_operations = [
+            operation
+            for operation in year_operations
+            if operation.get("Дата операции", "").split(" ")[0].split(".")[1] == month
+        ]
 
-        category_from_operations = [operation.get('Категория') for operation in month_operations if operation.get('Категория')]
+        category_from_operations = [
+            operation.get("Категория")
+            for operation in month_operations
+            if operation.get("Категория")
+        ]
         count_of_category = dict(col.Counter(category_from_operations))
 
         for key in count_of_category.keys():
             if isinstance(key, str):
-                sum_of_cashback = sum(operation.get('Кэшбэк', 0)
-                                          for operation in month_operations
-                                          if operation.get('Категория') == key
-                                          and not math.isnan(operation.get('Кэшбэк', 0)))
+                sum_of_cashback = sum(
+                    operation.get("Кэшбэк", 0)
+                    for operation in month_operations
+                    if operation.get("Категория") == key
+                    and not math.isnan(operation.get("Кэшбэк", 0))
+                )
 
                 if sum_of_cashback == 0:
                     continue
@@ -59,11 +73,11 @@ def investment_bank(date: str, transactions: list[dict], limit: int) -> float:
     """calculating a potential amount that could be invested to investment bank"""
     services_logger.info("START calculation potential amount for investment bank")
     try:
-        if isinstance(transactions, list):
+        if not isinstance(transactions, list):
             raise TypeError("transactions must be a list")
-        if isinstance(date, str):
+        if not isinstance(date, str):
             raise TypeError("date must be a string")
-        if isinstance(limit, int):
+        if not isinstance(limit, int):
             raise TypeError("limit must be a integer")
         if transactions is None:
             raise ValueError("transactions cannot be None")
@@ -75,15 +89,26 @@ def investment_bank(date: str, transactions: list[dict], limit: int) -> float:
         month = date.split("-")[1]
         year = date.split("-")[0]
 
-        year_operations = [operation for operation in transactions if
-                           operation.get('Дата операции', '').split(" ")[0].split('.')[2] == year]
-        month_operations = [operation for operation in year_operations if
-                            operation.get('Дата операции', '').split(" ")[0].split('.')[1] == month]
+        year_operations = [
+            operation
+            for operation in transactions
+            if operation.get("Дата операции", "").split(" ")[0].split(".")[2] == year
+        ]
+        month_operations = [
+            operation
+            for operation in year_operations
+            if operation.get("Дата операции", "").split(" ")[0].split(".")[1] == month
+        ]
 
-        potential_earnings = sum((math.ceil(operation.get('Сумма операции с округлением', 0)/limit)*limit -
-                                 operation.get('Сумма операции с округлением', 0))
-                              for operation in month_operations
-                              if operation.get('Сумма операции с округлением'))
+        potential_earnings = sum(
+            (
+                math.ceil(operation.get("Сумма операции с округлением", 0) / limit)
+                * limit
+                - operation.get("Сумма операции с округлением", 0)
+            )
+            for operation in month_operations
+            if operation.get("Сумма операции с округлением")
+        )
 
         return round(potential_earnings, 2)
 
@@ -96,3 +121,7 @@ def investment_bank(date: str, transactions: list[dict], limit: int) -> float:
 
     finally:
         services_logger.info("END calculation potential amount for investment bank")
+
+
+if __name__ == "__main__":
+    setup_logging()
